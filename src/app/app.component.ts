@@ -30,7 +30,7 @@ export class AppComponent {
         const result = this.transform(m)['cron'];
 
         const cron = result
-          .filter((u: TimeUnit) => u.unit !== 'second' && u.unit !== 'year')
+          //.filter((u: TimeUnit) => u.unit !== 'second' && u.unit !== 'year')
           .map((u: TimeUnit) => this.mapToCronFragment(u))
           .join(' ');
 
@@ -58,20 +58,12 @@ export class AppComponent {
       if (unit.values?.length) {
         unit.values = unit.values.map((m: any) => this.mapWeekdayToCron(m));
       }
-    } else {
-      if (unit.values?.length) {
-        unit.values = unit.values.map((v: any) => v - 1); // 0-based
-      }
     }
-
     if (unit.interval) {
       if (unit.interval.step === 1 && unit.interval.from === 0) {
         return '*';
       }
-      if (unit.interval.step === 1) {
-        return `*/${unit.interval.from}`;
-      }
-      return `${unit.interval.step}/${unit.interval.from}`;
+      return `${unit.interval.from}/${unit.interval.step}`;
     }
 
     if (unit.values?.length) {
