@@ -1,0 +1,30 @@
+<div class="main-container">
+  <header class="header header-6">
+    <div class="branding">
+      <a routerLink="/">
+        <cds-icon shape="details"></cds-icon>
+        <span class="title">{{ title }}</span>
+      </a>
+      <div class="header-nav">
+        <a href="https://github.com/rascmatt/time-dsl" target="_blank" class="nav-link">
+          <img src="assets/github.svg" alt="GitHub">
+        </a>
+      </div>
+    </div>
+  </header>
+  <div class="content-container">
+    <div class="content-area">
+
+      <div class="clr-row content">
+        <div class="clr-col-6">
+          <app-editor [title]="'Time Expression DSL'" [mode]="'ace/mode/mydsl'"
+                      (valueChange)="onInputChanged($event)"></app-editor>
+        </div>
+        <div class="clr-col-6">
+          <app-editor [title]="'Cron Expression'" [mode]="'ace/mode/text'"
+                      [value]="translated"></app-editor>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
