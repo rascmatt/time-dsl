@@ -9,13 +9,16 @@ TimeExpression {
            | IntervalFragment --interval
 
   ExactFragment = ExactTime        --time
-           \t\t| ExactDayOfWeek   --dayOfWeek
-           \t\t| ExactDayOfMonth  --dayOfMonth
-           \t\t| ExactMonth       --month
-           \t\t| ExactYear        --year
+                | ExactDayOfWeek   --dayOfWeek
+                | ExactDayOfMonth  --dayOfMonth
+                | ExactMonth       --month
+                | ExactYear        --year
 
-  // Allow for pre- and post-fix units
-  ExactTime = "at" (unit NumericValues | NumericValues unit)
+  ExactTime = "at" ExactValue
+
+  ExactValue = unit NumericValues  -- unitAndTime
+             | NumericValues unit  -- timeAndUnit
+             | timeValue           -- time
 
   ExactDayOfWeek = "on" DayOfWeekValues
   ExactDayOfMonth = "on" ("days"|"day")? NumericValues
@@ -58,22 +61,25 @@ TimeExpression {
   DayOfWeekValues = dayOfWeekValue+ (("," | "and") dayOfWeekValue)*
   MonthValues = monthValue+ (("," | "and") monthValue)*
 
+  timeValue = doubleDigit ":" doubleDigit (":" doubleDigit)?
+  doubleDigit = digit digit
+
   numericValue = digit+ ("st" | "nd" | "rd" | "th")?
 
   dayOfWeekValue = "monday"
-           | "mon"
-           | "tuesday"
-           | "tue"
-           | "wednesday"
-           | "wed"
-           | "thursday"
-           | "thu"
-           | "friday"
-           | "fri"
-           | "saturday"
-           | "sat"
-           | "sunday"
-           | "sun"
+                 | "mon"
+                 | "tuesday"
+                 | "tue"
+                 | "wednesday"
+                 | "wed"
+                 | "thursday"
+                 | "thu"
+                 | "friday"
+                 | "fri"
+                 | "saturday"
+                 | "sat"
+                 | "sunday"
+                 | "sun"
 
   monthValue = "jan"
              | "feb"

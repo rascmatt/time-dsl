@@ -113,7 +113,13 @@ export const semantics: ActionDict<any> = {
   Expression: function (fragments) {
 
     const resultFragments: any[] = fragments.children
-      .map(f => f['cron']);
+      // Some fragments might return multiple values (e.g. exact time '03:25')
+      .flatMap(f => {
+        if (f['cron'] instanceof Array) {
+          return f['cron'];
+        }
+        return [f['cron']];
+      });
 
     // Validate no duplicate units (e.g. dayOfWeek and dayOfMonth are not allowed together)
     const units = resultFragments.map((f: TimeUnit) => f.unit);
@@ -148,15 +154,16 @@ export const semantics: ActionDict<any> = {
   Fragment_interval: function (interval) {
     return interval['cron'];
   },
-  ExactTime: function (_at, n0, n1): TimeUnit {
-    const unit = n0.ctorName === 'unit' ? n0 : n1;
-    const values = n0.ctorName === 'unit' ? n1 : n0;
-
+  ExactTime: function (_at, value): TimeUnit {
+    return value['cron'];
+  },
+  ExactValue_unitAndTime: function (unit, values) {
     if (!(['second', 'minute', 'hour'].some(s => s === unit['cron']))) {
       throw new ValidationError(`Expected a time unit (seconds, minutes, hours).`, unit);
     }
 
-    const invalid = values['cron'].filter((d: number) => d < 0 || d > 59);
+    const invalid = values['cron'].filter((d: number) =>
+      unit['cron'] === 'hour' ? d < 0 || d > 23 : d < 0 || d > 59);
     if (invalid?.length) {
       throw new ValidationError(`Invalid time value(s) ${invalid}`, values);
     }
@@ -165,6 +172,25 @@ export const semantics: ActionDict<any> = {
       unit: unit['cron'],
       values: values['cron']
     } as TimeUnit;
+  },
+  ExactValue_timeAndUnit: function (values, unit) {
+    if (!(['second', 'minute', 'hour'].some(s => s === unit['cron']))) {
+      throw new ValidationError(`Expected a time unit (seconds, minutes, hours).`, unit);
+    }
+
+    const invalid = values['cron'].filter((d: number) =>
+      unit['cron'] === 'hour' ? d < 0 || d > 23 : d < 0 || d > 59);
+    if (invalid?.length) {
+      throw new ValidationError(`Invalid time value(s) ${invalid}`, values);
+    }
+
+    return {
+      unit: unit['cron'],
+      values: values['cron']
+    } as TimeUnit;
+  },
+  ExactValue_time: function (value) {
+    return value['cron'];
   },
   ExactDayOfWeek: function (_on, values) {
     // No validation needed, the grammar ensures that the values are valid
@@ -291,6 +317,44 @@ export const semantics: ActionDict<any> = {
   },
   numericValue: function (n, _postfix) {
     return parseInt(n.sourceString, 10);
+  },
+  timeValue: function (hour, _colon, minute, _colon2, second) {
+    const h = hour['cron'];
+    const m = minute['cron'];
+    let s = 0;
+    if (second.sourceString) {
+      s = second['cron']?.[0];
+    }
+
+    if (h < 0 || h > 23) {
+      throw new ValidationError(`Invalid hour ${h}. Only values between 0 and 23 are supported.`, hour);
+    }
+
+    if (m < 0 || m > 59) {
+      throw new ValidationError(`Invalid minute ${m}. Only values between 0 and 59 are supported.`, minute);
+    }
+
+    if (s < 0 || s > 59) {
+      throw new ValidationError(`Invalid second ${s}. Only values between 0 and 59 are supported.`, second);
+    }
+
+    return [
+      {
+        unit: 'hour',
+        values: [h]
+      } as TimeUnit,
+      {
+        unit: 'minute',
+        values: [m]
+      },
+      {
+        unit: 'second',
+        values: [s]
+      }
+    ]
+  },
+  doubleDigit: function (n0, n1) {
+    return parseInt(n0.sourceString + n1.sourceString, 10);
   },
   unit: function (unit) {
     return mapUnit(unit.sourceString);
